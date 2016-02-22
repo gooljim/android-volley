@@ -16,6 +16,21 @@
 
 package com.android.volley.toolbox;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.Request.Method;
+
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.ProtocolVersion;
+import org.apache.http.StatusLine;
+import org.apache.http.entity.BasicHttpEntity;
+import org.apache.http.message.BasicHeader;
+import org.apache.http.message.BasicHttpResponse;
+import org.apache.http.message.BasicStatusLine;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,21 +44,6 @@ import java.util.Map.Entry;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
-
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.ProtocolVersion;
-import org.apache.http.StatusLine;
-import org.apache.http.entity.BasicHttpEntity;
-import org.apache.http.message.BasicHeader;
-import org.apache.http.message.BasicHttpResponse;
-import org.apache.http.message.BasicStatusLine;
-
-import com.android.volley.AuthFailureError;
-import com.android.volley.Request;
-import com.android.volley.Request.Method;
 
 /**
  * An {@link HttpStack} based on {@link HttpURLConnection}.
@@ -122,7 +122,7 @@ public class HurlStack implements HttpStack {
         if (hasResponseBody(request.getMethod(), responseStatus.getStatusCode())) {
             response.setEntity(entityFromConnection(connection));
         }
- 
+
         for (Entry<String, List<String>> header : connection.getHeaderFields().entrySet()) {
             if (header.getKey() != null) {
                 Header h = new BasicHeader(header.getKey(), header.getValue().get(0));
