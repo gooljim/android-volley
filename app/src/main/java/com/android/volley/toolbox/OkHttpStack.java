@@ -3,15 +3,6 @@ package com.android.volley.toolbox;
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.ProtocolVersion;
-import org.apache.http.StatusLine;
-import org.apache.http.entity.BasicHttpEntity;
-import org.apache.http.message.BasicHeader;
-import org.apache.http.message.BasicHttpResponse;
-import org.apache.http.message.BasicStatusLine;
-
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
@@ -20,10 +11,8 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.Headers;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 
 /**
  *
@@ -35,19 +24,6 @@ public class OkHttpStack implements HttpStack {
         this.mClient = new OkHttpClient();
     }
 
-    private static HttpEntity entityFromOkHttpResponse(Response response) throws IOException {
-        BasicHttpEntity entity = new BasicHttpEntity();
-        ResponseBody body = response.body();
-
-        entity.setContent(body.byteStream());
-        entity.setContentLength(body.contentLength());
-        entity.setContentEncoding(response.header("Content-Encoding"));
-
-        if (body.contentType() != null) {
-            entity.setContentType(body.contentType().type());
-        }
-        return entity;
-    }
 
     @SuppressWarnings("deprecation")
     private static void setConnectionParametersForRequest
@@ -106,23 +82,9 @@ public class OkHttpStack implements HttpStack {
         return RequestBody.create(MediaType.parse(request.getBodyContentType()), body);
     }
 
-    private static ProtocolVersion parseProtocol(final Protocol protocol) {
-        switch (protocol) {
-            case HTTP_1_0:
-                return new ProtocolVersion("HTTP", 1, 0);
-            case HTTP_1_1:
-                return new ProtocolVersion("HTTP", 1, 1);
-            case SPDY_3:
-                return new ProtocolVersion("SPDY", 3, 1);
-            case HTTP_2:
-                return new ProtocolVersion("HTTP", 2, 0);
-        }
-
-        throw new IllegalAccessError("Unkwown protocol");
-    }
 
     @Override
-    public HttpResponse performRequest(Request<?> request, Map<String, String> additionalHeaders)
+    public okhttp3.Response performRequest(Request<?> request, Map<String, String> additionalHeaders)
             throws IOException, AuthFailureError {
         int timeoutMs = request.getTimeoutMs();
         OkHttpClient client = mClient.newBuilder()
@@ -148,26 +110,15 @@ public class OkHttpStack implements HttpStack {
         okhttp3.Request okhttp3Request = okHttpRequestBuilder.url(request.getUrl()).build();
         Response okHttpResponse = client.newCall(okhttp3Request).execute();
 
-        StatusLine responseStatus = new BasicStatusLine
-                (
-                        parseProtocol(okHttpResponse.protocol()),
-                        okHttpResponse.code(),
-                        okHttpResponse.message()
-                );
-
-        BasicHttpResponse response = new BasicHttpResponse(responseStatus);
-        response.setEntity(entityFromOkHttpResponse(okHttpResponse));
-
         Headers responseHeaders = okHttpResponse.headers();
         for (int i = 0, len = responseHeaders.size(); i < len; i++) {
             final String name = responseHeaders.name(i), value = responseHeaders.value(i);
             if (name != null) {
-                response.addHeader(new BasicHeader(name, value));
                 if (name.toLowerCase(Locale.getDefault()).equals("set-cookie")) {
                     CookieManager.getInstance().setCookie(request.getUrl(), value);
                 }
             }
         }
-        return response;
+        return okHttpResponse;
     }
 }

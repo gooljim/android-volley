@@ -1,5 +1,7 @@
 package com.android.volley.toolbox;
 
+import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -11,8 +13,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
-import android.util.Log;
 
 /**
  * CookieManager.java
@@ -269,7 +269,7 @@ public final class CookieManager{
         if(ret.length() > 0)
             return ret.toString();
         else
-            return null;
+            return "";
     }
 
     /**

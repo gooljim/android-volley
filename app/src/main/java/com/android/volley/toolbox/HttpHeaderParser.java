@@ -19,11 +19,9 @@ package com.android.volley.toolbox;
 import com.android.volley.Cache;
 import com.android.volley.NetworkResponse;
 
-import org.apache.http.impl.cookie.DateParseException;
-import org.apache.http.impl.cookie.DateUtils;
-import org.apache.http.protocol.HTTP;
-
 import java.util.Map;
+
+import okhttp3.internal.http.HttpDate;
 
 /**
  * Utility methods for parsing HTTP headers.
@@ -42,14 +40,10 @@ public class HttpHeaderParser {
         Map<String, String> headers = response.headers;
 
         long serverDate = 0;
-        long lastModified = 0;
         long serverExpires = 0;
         long softExpire = 0;
-        long finalExpire = 0;
         long maxAge = 0;
-        long staleWhileRevalidate = 0;
         boolean hasCacheControl = false;
-        boolean mustRevalidate = false;
 
         String serverEtag = null;
         String headerValue;
@@ -72,13 +66,8 @@ public class HttpHeaderParser {
                         maxAge = Long.parseLong(token.substring(8));
                     } catch (Exception e) {
                     }
-                } else if (token.startsWith("stale-while-revalidate=")) {
-                    try {
-                        staleWhileRevalidate = Long.parseLong(token.substring(23));
-                    } catch (Exception e) {
-                    }
                 } else if (token.equals("must-revalidate") || token.equals("proxy-revalidate")) {
-                    mustRevalidate = true;
+                    maxAge = 0;
                 }
             }
         }
@@ -88,33 +77,23 @@ public class HttpHeaderParser {
             serverExpires = parseDateAsEpoch(headerValue);
         }
 
-        headerValue = headers.get("Last-Modified");
-        if (headerValue != null) {
-            lastModified = parseDateAsEpoch(headerValue);
-        }
-
         serverEtag = headers.get("ETag");
 
         // Cache-Control takes precedence over an Expires header, even if both exist and Expires
         // is more restrictive.
         if (hasCacheControl) {
             softExpire = now + maxAge * 1000;
-            finalExpire = mustRevalidate
-                    ? softExpire
-                    : softExpire + staleWhileRevalidate * 1000;
         } else if (serverDate > 0 && serverExpires >= serverDate) {
             // Default semantic for Expire header in HTTP specification is softExpire.
             softExpire = now + (serverExpires - serverDate);
-            finalExpire = softExpire;
         }
 
         Cache.Entry entry = new Cache.Entry();
         entry.data = response.data;
         entry.etag = serverEtag;
         entry.softTtl = softExpire;
-        entry.ttl = finalExpire;
+        entry.ttl = entry.softTtl;
         entry.serverDate = serverDate;
-        entry.lastModified = lastModified;
         entry.responseHeaders = headers;
 
         return entry;
@@ -126,12 +105,13 @@ public class HttpHeaderParser {
     public static long parseDateAsEpoch(String dateStr) {
         try {
             // Parse date in RFC1123 format if this header contains one
-            return DateUtils.parseDate(dateStr).getTime();
-        } catch (DateParseException e) {
+            return HttpDate.parse(dateStr).getTime();
+        } catch (NullPointerException e) {
             // Date in invalid format, fallback to 0
             return 0;
         }
     }
+
 
     /**
      * Retrieve a charset from headers
@@ -142,7 +122,7 @@ public class HttpHeaderParser {
      * or the defaultCharset if none can be found.
      */
     public static String parseCharset(Map<String, String> headers, String defaultCharset) {
-        String contentType = headers.get(HTTP.CONTENT_TYPE);
+        String contentType = headers.get("Content-Type");
         if (contentType != null) {
             String[] params = contentType.split(";");
             for (int i = 1; i < params.length; i++) {
@@ -160,9 +140,9 @@ public class HttpHeaderParser {
 
     /**
      * Returns the charset specified in the Content-Type of this header,
-     * or the HTTP default (ISO-8859-1) if none can be found.
+     * or the HTTP default (utf-8) if none can be found.
      */
     public static String parseCharset(Map<String, String> headers) {
-        return parseCharset(headers, HTTP.UTF_8);
+        return parseCharset(headers, "utf-8");
     }
 }

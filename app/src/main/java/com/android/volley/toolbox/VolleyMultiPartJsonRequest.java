@@ -1,5 +1,16 @@
 package com.android.volley.toolbox;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.DefaultRetryPolicy;
+import com.android.volley.NetworkResponse;
+import com.android.volley.ParseError;
+import com.android.volley.Response;
+import com.android.volley.Response.ErrorListener;
+import com.android.volley.Response.Listener;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -9,17 +20,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import com.android.volley.AuthFailureError;
-import com.android.volley.DefaultRetryPolicy;
-import com.android.volley.NetworkResponse;
-import com.android.volley.ParseError;
-import com.android.volley.Response;
-import com.android.volley.Response.ErrorListener;
-import com.android.volley.Response.Listener;
 
 /**
  * A canned request for retrieving the response body at a given URL as a String.
@@ -152,7 +152,7 @@ public class VolleyMultiPartJsonRequest extends JsonRequest<JSONObject> {
     protected Response<JSONObject> parseNetworkResponse(NetworkResponse response) {
         try {
             String jsonString = new String(response.data,
-                    HttpHeaderParser.parseCharset(response.headers, PROTOCOL_CHARSET));
+                    HttpHeaderParser.parseCharset(response.headers));
             return Response.success(new JSONObject(jsonString),
                     HttpHeaderParser.parseCacheHeaders(response));
         } catch (UnsupportedEncodingException e) {
