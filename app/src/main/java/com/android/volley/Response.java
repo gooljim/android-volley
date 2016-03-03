@@ -82,4 +82,7 @@ public class Response<T> {
         this.cacheEntry = null;
         this.error = error;
     }
+    public interface LoadingListener{
+        public void onLoading(boolean isUpload,long total,long current);
+    }
 }

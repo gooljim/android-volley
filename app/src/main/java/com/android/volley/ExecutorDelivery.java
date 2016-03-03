@@ -24,11 +24,14 @@ import java.util.concurrent.Executor;
  * Delivers responses and errors.
  */
 public class ExecutorDelivery implements ResponseDelivery {
-    /** Used for posting responses, typically to the main thread. */
+    /**
+     * Used for posting responses, typically to the main thread.
+     */
     private final Executor mResponsePoster;
 
     /**
      * Creates a new response delivery interface.
+     *
      * @param handler {@link Handler} to post responses on
      */
     public ExecutorDelivery(final Handler handler) {
@@ -44,6 +47,7 @@ public class ExecutorDelivery implements ResponseDelivery {
     /**
      * Creates a new response delivery interface, mockable version
      * for testing.
+     *
      * @param executor For running delivery tasks
      */
     public ExecutorDelivery(Executor executor) {
@@ -67,6 +71,66 @@ public class ExecutorDelivery implements ResponseDelivery {
         request.addMarker("post-error");
         Response<?> response = Response.error(error);
         mResponsePoster.execute(new ResponseDeliveryRunnable(request, response, null));
+    }
+
+    @Override
+    public void postProgress(ExecutorDelivery.ProgressDeliveryRunnable progressDeliveryRunnable) {
+        progressDeliveryRunnable.getRequest().addMarker("post-progress");
+        mResponsePoster.execute(progressDeliveryRunnable);
+    }
+
+    public static class ProgressDeliveryRunnable implements Runnable {
+        private Request mRequest;
+        private boolean isUpload;
+        private long total;
+        private long current;
+
+        public ProgressDeliveryRunnable(Request request, boolean isUpload, long current, long total) {
+            mRequest = request;
+            this.isUpload = isUpload;
+            this.total = total;
+            this.current = current;
+        }
+
+        public ProgressDeliveryRunnable(Request request) {
+            mRequest = request;
+        }
+
+        public Request getRequest() {
+            return mRequest;
+        }
+
+        public boolean isUpload() {
+            return isUpload;
+        }
+
+        public void setIsUpload(boolean isUpload) {
+            this.isUpload = isUpload;
+        }
+
+        public long getTotal() {
+            return total;
+        }
+
+        public void setTotal(long total) {
+            this.total = total;
+        }
+
+        public long getCurrent() {
+            return current;
+        }
+
+        public void setCurrent(long current) {
+            this.current = current;
+        }
+
+        @Override
+        public void run() {
+            if (mRequest.isCanceled()) {
+                return;
+            }
+            mRequest.deliverProgress(isUpload, current, total);
+        }
     }
 
     /**
@@ -113,6 +177,6 @@ public class ExecutorDelivery implements ResponseDelivery {
             if (mRunnable != null) {
                 mRunnable.run();
             }
-       }
+        }
     }
 }

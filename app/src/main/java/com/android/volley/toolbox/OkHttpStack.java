@@ -75,7 +75,7 @@ public class OkHttpStack implements HttpStack {
         }
     }
 
-    private static RequestBody createRequestBody(Request request) throws AuthFailureError {
+    private static RequestBody createRequestBody(Request<?> request) throws AuthFailureError {
         final byte[] body = request.getBody();
         if (body == null) return null;
 
