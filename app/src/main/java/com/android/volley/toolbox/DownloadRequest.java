@@ -26,7 +26,7 @@ import okhttp3.ResponseBody;
 public class DownloadRequest extends Request<File> {
 
     private final Response.Listener<File> mListener;
-    private final String mSavePath;
+    private String mSavePath;
     private boolean mAutoResume;
     private ExecutorDelivery.ProgressDeliveryRunnable mDeliverRunnable;
 
@@ -43,6 +43,7 @@ public class DownloadRequest extends Request<File> {
 
     @Override
     public Map<String, String> getHeaders() throws AuthFailureError {
+        Map<String, String> headers = new HashMap<>();
         if (mAutoResume) {
             File downloadFile = new File(mSavePath);
             long fileLen = 0;
@@ -50,12 +51,11 @@ public class DownloadRequest extends Request<File> {
                 fileLen = downloadFile.length();
             }
             if (fileLen > 0) {
-                Map<String, String> headers = new HashMap<String, String>();
                 headers.put("RANGE", "bytes=" + fileLen + "-");
                 return headers;
             }
         }
-        return super.getHeaders();
+        return headers;
     }
 
     public boolean isSupportRange(final okhttp3.Response response) {
@@ -118,8 +118,9 @@ public class DownloadRequest extends Request<File> {
                     if (isCanceled()) {
                         throw new CanceledError();
                     }
-                    if ((oldCurrent - current) / total >= 0.01f) {
+                    if ((current - oldCurrent) * 100 / total >= 1) {
                         postProgress(false, current, total);
+                        oldCurrent = current;
                     }
                 }
                 bos.flush();
@@ -175,4 +176,6 @@ public class DownloadRequest extends Request<File> {
             mListener.onResponse(response);
         }
     }
+
+
 }
