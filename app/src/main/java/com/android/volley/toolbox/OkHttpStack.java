@@ -1,6 +1,7 @@
 package com.android.volley.toolbox;
 
 import com.android.volley.AuthFailureError;
+import com.android.volley.ByteParam;
 import com.android.volley.Request;
 
 import java.io.IOException;
@@ -10,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 import okhttp3.Headers;
 import okhttp3.MediaType;
+import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
 import okhttp3.Response;
@@ -18,7 +20,7 @@ import okhttp3.Response;
  *
  */
 public class OkHttpStack implements HttpStack {
-    private final OkHttpClient mClient;
+    private OkHttpClient mClient;
 
     public OkHttpStack() {
         this.mClient = new OkHttpClient();
@@ -76,16 +78,43 @@ public class OkHttpStack implements HttpStack {
     }
 
     private static RequestBody createRequestBody(Request<?> request) throws AuthFailureError {
-        final byte[] body = request.getBody();
-        if (body == null) return null;
+        final int type = request.getBodyCreateType();
+        if (type == Request.BodyType.MULTIPART) {
+            return createMultiPartBody(request);
+        } else {
+            final byte[] body = request.getBody();
+            if (body == null) return null;
+            return RequestBody.create(MediaType.parse(request.getBodyContentType()), body);
+        }
 
-        return RequestBody.create(MediaType.parse(request.getBodyContentType()), body);
+    }
+
+    private static RequestBody createMultiPartBody(Request<?> request) throws AuthFailureError {
+        Map<String, Object> content = request.getParams();
+        if (content == null) return null;
+        MultipartBody.Builder requestBodyBuilder = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM);
+        for (Map.Entry<String, Object> entry : content.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            if (value instanceof ByteParam) {
+                requestBodyBuilder.addFormDataPart(key, key, RequestBody.create(MediaType.parse(((ByteParam) value).getFileType()), ((ByteParam) value).getContent()));
+            } else {
+                requestBodyBuilder.addFormDataPart(key, String.valueOf(entry.getValue()));
+            }
+
+        }
+        RequestBody requestBody = requestBodyBuilder.build();
+        return requestBody;
     }
 
 
     @Override
     public okhttp3.Response performRequest(Request<?> request, Map<String, String> additionalHeaders)
             throws IOException, AuthFailureError {
+        if (request.getBodyCreateType() == Request.BodyType.MULTIPART) {
+            mClient = new OkHttpClient();
+        }
         int timeoutMs = request.getTimeoutMs();
         OkHttpClient client = mClient.newBuilder()
                 .readTimeout(timeoutMs, TimeUnit.MILLISECONDS)
