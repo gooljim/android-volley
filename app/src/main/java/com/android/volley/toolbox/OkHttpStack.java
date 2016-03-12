@@ -112,9 +112,6 @@ public class OkHttpStack implements HttpStack {
     @Override
     public okhttp3.Response performRequest(Request<?> request, Map<String, String> additionalHeaders)
             throws IOException, AuthFailureError {
-        if (request.getBodyCreateType() == Request.BodyType.MULTIPART) {
-            mClient = new OkHttpClient();
-        }
         int timeoutMs = request.getTimeoutMs();
         OkHttpClient client = mClient.newBuilder()
                 .readTimeout(timeoutMs, TimeUnit.MILLISECONDS)
