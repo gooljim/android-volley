@@ -160,16 +160,6 @@ public class VolleyMultiPartRequest extends Request<String> {
     protected void deliverResponse(String response) {
         mListener.onResponse(response);
     }
-    @Override
-    public Map<String, String> getHeaders() throws AuthFailureError {
 
-        String cookie = CookieManager.getInstance().getCookie(getUrl());
-        if (cookie != null) {
-            Map<String, String> result = new HashMap<String, String>();
-            result.put("cookie", cookie);
-            return result;
-        }
-        return super.getHeaders();
-    }
 }
 

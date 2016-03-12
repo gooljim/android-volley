@@ -1,6 +1,5 @@
 package com.android.volley.toolbox;
 
-import com.android.volley.AuthFailureError;
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.NetworkResponse;
 import com.android.volley.ParseError;
@@ -161,18 +160,6 @@ public class VolleyMultiPartJsonRequest extends JsonRequest<JSONObject> {
             return Response.error(new ParseError(je));
         }
     }
- 
 
-    @Override
-    public Map<String, String> getHeaders() throws AuthFailureError {
-
-        String cookie = CookieManager.getInstance().getCookie(getUrl());
-        if (cookie != null) {
-            Map<String, String> result = new HashMap<String, String>();
-            result.put("cookie", cookie);
-            return result;
-        }
-        return super.getHeaders();
-    }
 }
 

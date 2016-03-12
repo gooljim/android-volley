@@ -20,6 +20,10 @@ import android.content.Context;
 
 import com.android.volley.Network;
 import com.android.volley.RequestQueue;
+import com.android.volley.cookie.ClearableCookieJar;
+import com.android.volley.cookie.PersistentCookieJar;
+import com.android.volley.cookie.SetCookieCache;
+import com.android.volley.cookie.SharedPrefsCookiePersistor;
 
 import java.io.File;
 
@@ -39,13 +43,11 @@ public class Volley {
      */
     public static RequestQueue newRequestQueue(Context context, HttpStack stack, int maxDiskCacheBytes) {
         File cacheDir = new File(context.getCacheDir(), DEFAULT_CACHE_DIR);
-      
+        ClearableCookieJar cookieJar = new PersistentCookieJar(new SetCookieCache(), new SharedPrefsCookiePersistor(context));
         if (stack == null) {
-            stack=new OkHttpStack();
+            stack=new OkHttpStack(cookieJar);
         }
-
         Network network = new BasicNetwork(stack);
-        
         RequestQueue queue;
         if (maxDiskCacheBytes <= -1)
         {
@@ -57,9 +59,7 @@ public class Volley {
         	// Disk cache size specified
         	queue = new RequestQueue(new DiskBasedCache(cacheDir, maxDiskCacheBytes), network);
         }
-
         queue.start();
-
         return queue;
     }
     

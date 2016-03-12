@@ -3,13 +3,12 @@ package com.android.volley.toolbox;
 import com.android.volley.AuthFailureError;
 import com.android.volley.ByteParam;
 import com.android.volley.Request;
+import com.android.volley.cookie.ClearableCookieJar;
 
 import java.io.IOException;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import okhttp3.Headers;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -26,6 +25,12 @@ public class OkHttpStack implements HttpStack {
         this.mClient = new OkHttpClient();
     }
 
+    public OkHttpStack(ClearableCookieJar cookieJar) {
+        this.mClient = new OkHttpClient.Builder()
+                .cookieJar(cookieJar)
+                .build();
+    }
+
 
     @SuppressWarnings("deprecation")
     private static void setConnectionParametersForRequest
@@ -35,15 +40,12 @@ public class OkHttpStack implements HttpStack {
             case Request.Method.DEPRECATED_GET_OR_POST:
                 byte[] postBody = request.getPostBody();
                 if (postBody != null) {
-                    builder.post(RequestBody.create
-                            (MediaType.parse(request.getPostBodyContentType()), postBody));
+                    builder.post(RequestBody.create(MediaType.parse(request.getPostBodyContentType()), postBody));
                 }
                 break;
-
             case Request.Method.GET:
                 builder.get();
                 break;
-
             case Request.Method.DELETE:
                 builder.delete();
                 break;
@@ -51,19 +53,15 @@ public class OkHttpStack implements HttpStack {
             case Request.Method.POST:
                 builder.post(createRequestBody(request));
                 break;
-
             case Request.Method.PUT:
                 builder.put(createRequestBody(request));
                 break;
-
             case Request.Method.HEAD:
                 builder.head();
                 break;
-
             case Request.Method.OPTIONS:
                 builder.method("OPTIONS", null);
                 break;
-
             case Request.Method.TRACE:
                 builder.method("TRACE", null);
                 break;
@@ -71,7 +69,6 @@ public class OkHttpStack implements HttpStack {
             case Request.Method.PATCH:
                 builder.patch(createRequestBody(request));
                 break;
-
             default:
                 throw new IllegalStateException("Unknown method type.");
         }
@@ -86,7 +83,6 @@ public class OkHttpStack implements HttpStack {
             if (body == null) return null;
             return RequestBody.create(MediaType.parse(request.getBodyContentType()), body);
         }
-
     }
 
     private static RequestBody createMultiPartBody(Request<?> request) throws AuthFailureError {
@@ -102,7 +98,6 @@ public class OkHttpStack implements HttpStack {
             } else {
                 requestBodyBuilder.addFormDataPart(key, String.valueOf(entry.getValue()));
             }
-
         }
         RequestBody requestBody = requestBodyBuilder.build();
         return requestBody;
@@ -118,33 +113,18 @@ public class OkHttpStack implements HttpStack {
                 .connectTimeout(timeoutMs, TimeUnit.MILLISECONDS)
                 .writeTimeout(timeoutMs, TimeUnit.MILLISECONDS)
                 .build();
-
         okhttp3.Request.Builder okHttpRequestBuilder = new okhttp3.Request.Builder();
         Map<String, String> headers = request.getHeaders();
-        String url = request.getUrl();
-        //add cookie
-        headers.put(request.getCookieKey(), CookieManager.getInstance().getCookie(url));
         for (final String name : headers.keySet()) {
             okHttpRequestBuilder.addHeader(name, headers.get(name));
         }
-
         for (final String name : additionalHeaders.keySet()) {
             okHttpRequestBuilder.addHeader(name, additionalHeaders.get(name));
         }
         setConnectionParametersForRequest(okHttpRequestBuilder, request);
-
         okhttp3.Request okhttp3Request = okHttpRequestBuilder.url(request.getUrl()).build();
         Response okHttpResponse = client.newCall(okhttp3Request).execute();
 
-        Headers responseHeaders = okHttpResponse.headers();
-        for (int i = 0, len = responseHeaders.size(); i < len; i++) {
-            final String name = responseHeaders.name(i), value = responseHeaders.value(i);
-            if (name != null) {
-                if (name.toLowerCase(Locale.getDefault()).equals("set-cookie")) {
-                    CookieManager.getInstance().setCookie(request.getUrl(), value);
-                }
-            }
-        }
         return okHttpResponse;
     }
 }
