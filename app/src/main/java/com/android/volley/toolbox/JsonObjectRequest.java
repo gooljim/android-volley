@@ -16,6 +16,7 @@
 
 package com.android.volley.toolbox;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.NetworkResponse;
 import com.android.volley.ParseError;
 import com.android.volley.Response;
@@ -26,48 +27,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A request for retrieving a {@link JSONObject} response body at a given URL, allowing for an
  * optional {@link JSONObject} to be passed in as part of the request body.
  */
 public class JsonObjectRequest extends JsonRequest<JSONObject> {
-
-    /**
-     * Creates a new request.
-     * @param method the HTTP method to use
-     * @param url URL to fetch the JSON from
-     * @param requestBody A {@link String} to post with the request. Null is allowed and
-     *   indicates no parameters will be posted along with request.
-     * @param listener Listener to receive the JSON response
-     * @param errorListener Error listener, or null to ignore errors.
-     */
-    public JsonObjectRequest(int method, String url, String requestBody,
-                             Listener<JSONObject> listener, ErrorListener errorListener) {
-        super(method, url, requestBody, listener,
-                errorListener);
-    }
-
-    /**
-     * Creates a new request.
-     * @param url URL to fetch the JSON from
-     * @param listener Listener to receive the JSON response
-     * @param errorListener Error listener, or null to ignore errors.
-     */
-    public JsonObjectRequest(String url, Listener<JSONObject> listener, ErrorListener errorListener) {
-        super(Method.GET, url, null, listener, errorListener);
-    }
-
-    /**
-     * Creates a new request.
-     * @param method the HTTP method to use
-     * @param url URL to fetch the JSON from
-     * @param listener Listener to receive the JSON response
-     * @param errorListener Error listener, or null to ignore errors.
-     */
-    public JsonObjectRequest(int method, String url, Listener<JSONObject> listener, ErrorListener errorListener) {
-        super(method, url, null, listener, errorListener);
-    }
 
     /**
      * Creates a new request.
@@ -100,7 +67,7 @@ public class JsonObjectRequest extends JsonRequest<JSONObject> {
     protected Response<JSONObject> parseNetworkResponse(NetworkResponse response) {
         try {
             String jsonString = new String(response.data,
-                    HttpHeaderParser.parseCharset(response.headers));
+                    HttpHeaderParser.parseCharset(response.headers, PROTOCOL_CHARSET));
             return Response.success(new JSONObject(jsonString),
                     HttpHeaderParser.parseCacheHeaders(response));
         } catch (UnsupportedEncodingException e) {
@@ -109,5 +76,12 @@ public class JsonObjectRequest extends JsonRequest<JSONObject> {
             return Response.error(new ParseError(je));
         }
     }
-    
+    @Override
+    public Map<String, String> getHeaders() throws AuthFailureError {
+        Map<String, String> result = new HashMap<String, String>();
+        result.putAll(RequestManager.getHeader());
+        return result;
+    }
+
+
 }

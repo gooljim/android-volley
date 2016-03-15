@@ -1,5 +1,6 @@
 package com.android.volley.toolbox;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.NetworkResponse;
 import com.android.volley.ParseError;
@@ -26,7 +27,7 @@ import java.util.Map;
 public class VolleyMultiPartJsonRequest extends JsonRequest<JSONObject> {
 
     // POST param
-    private Map<String, String> mParams = null;
+    private Map<String, Object> mParams = null;
     // upload file
     private Map<String, String> mFileUploads = null;
     public static final int TIMEOUT_MS = 30000;
@@ -52,7 +53,7 @@ public class VolleyMultiPartJsonRequest extends JsonRequest<JSONObject> {
         // set retry policy
         setRetryPolicy(new DefaultRetryPolicy(TIMEOUT_MS, 1,
                 DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
-        mParams = new HashMap<String, String>();
+        mParams = new HashMap<String, Object>();
         mFileUploads = new HashMap<String, String>();
     }
 
@@ -84,7 +85,7 @@ public class VolleyMultiPartJsonRequest extends JsonRequest<JSONObject> {
                 dos.writeBytes(paramType);
                 dos.writeBytes("Content-Disposition: form-data; name=\"" + key + "\"" + lineEnd);
                 dos.writeBytes("Content-Transfer-Encoding: 8bit\r\n\r\n");
-                String value = mParams.get(key);
+                String value = String.valueOf(mParams.get(key));
                 dos.writeBytes(URLEncoder.encode(value, "UTF-8"));
 
                 dos.writeBytes(lineEnd);
@@ -160,6 +161,11 @@ public class VolleyMultiPartJsonRequest extends JsonRequest<JSONObject> {
             return Response.error(new ParseError(je));
         }
     }
-
+    @Override
+    public Map<String, String> getHeaders() throws AuthFailureError {
+        Map<String, String> result = new HashMap<String, String>();
+        result.putAll(RequestManager.getHeader());
+        return result;
+    }
 }
 

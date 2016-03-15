@@ -5,8 +5,6 @@ import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.NetworkResponse;
 import com.android.volley.Request;
 import com.android.volley.Response;
-import com.android.volley.Response.ErrorListener;
-import com.android.volley.Response.Listener;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -22,36 +20,22 @@ import java.util.Map;
  * A canned request for retrieving the response body at a given URL as a String.
  */
 public class VolleyMultiPartRequest extends Request<String> {
-
-    private final Listener<String> mListener;
-    // POST param
-    private Map<String, String> mParams = null;
-    // upload file
+    private final Response.Listener<String> mListener;
+    private Map<String, Object> mParams = null;
     private Map<String, String> mFileUploads = null;
     public static final int TIMEOUT_MS = 30000;
-    // delimiter
     private final String mBoundary = "Volley-" + System.currentTimeMillis();
     private final String lineEnd = "\r\n";
     private final String twoHyphens = "--";
-    // output stream
     ByteArrayOutputStream mOutputStream = new ByteArrayOutputStream();
 
-    /**
-     * Creates a new request with the given method.
-     *
-     * @param url           URL to fetch the string at
-     * @param listener      Listener to receive the String response
-     * @param errorListener Error listener, or null to ignore errors
-     */
-    public VolleyMultiPartRequest(String url, Listener<String> listener, ErrorListener errorListener) {
-
+    public VolleyMultiPartRequest(String url, Response.Listener<String> listener, Response.ErrorListener errorListener) {
         super(Method.POST, url, errorListener);
-        // set retry policy
-        setRetryPolicy(new DefaultRetryPolicy(TIMEOUT_MS, 1,
+        setRetryPolicy(new DefaultRetryPolicy(TIMEOUT_MS, DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
                 DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
-        mListener = listener;
-        mParams = new HashMap<String, String>();
-        mFileUploads = new HashMap<String, String>();
+        this.mListener = listener;
+        this.mParams = new HashMap<>();
+        this.mFileUploads = new HashMap<>();
     }
 
     /**
@@ -69,7 +53,7 @@ public class VolleyMultiPartRequest extends Request<String> {
     }
 
     @Override
-    public byte[] getBody() throws AuthFailureError {
+    public byte[] getBody() {
         try {
             // 输出流
             DataOutputStream dos = new DataOutputStream(mOutputStream);
@@ -82,7 +66,7 @@ public class VolleyMultiPartRequest extends Request<String> {
                 dos.writeBytes(paramType);
                 dos.writeBytes("Content-Disposition: form-data; name=\"" + key + "\"" + lineEnd);
                 dos.writeBytes("Content-Transfer-Encoding: 8bit\r\n\r\n");
-                String value = mParams.get(key);
+                String value = (String)mParams.get(key);
                 dos.writeBytes(URLEncoder.encode(value, "UTF-8"));
 
                 dos.writeBytes(lineEnd);
@@ -121,30 +105,22 @@ public class VolleyMultiPartRequest extends Request<String> {
         }
     }
 
-    /**
-     * Add a parameter to be sent in the multipart request
-     *
-     * @param name  The name of the parameter
-     * @param value the value of the parameter
-     */
     public void addParam(String name, String value) {
-        mParams.put(name, value);
+        this.mParams.put(name, value);
     }
-    public void addParams(Map<String, String> params) {
-        mParams.putAll(params);
+
+    public void addParams(Map<String, Object> params) {
+        this.mParams.putAll(params);
     }
-    /**
-     * Add a file to be uploaded in the multipart request
-     *
-     * @param name     The name of the file key
-     * @param filePath The path to the file. This file MUST exist.
-     */
+
     public void addFile(String name, String filePath) {
-        mFileUploads.put(name, filePath);
+        this.mFileUploads.put(name, filePath);
     }
+
     public void addFiles(Map<String, String> filePaths) {
-        mFileUploads.putAll(filePaths);
+        this.mFileUploads.putAll(filePaths);
     }
+
     @Override
     protected Response<String> parseNetworkResponse(NetworkResponse response) {
         String parsed;
@@ -161,5 +137,11 @@ public class VolleyMultiPartRequest extends Request<String> {
         mListener.onResponse(response);
     }
 
+    @Override
+    public Map<String, String> getHeaders() throws AuthFailureError {
+        Map<String, String> result = new HashMap<String, String>();
+        result.putAll(RequestManager.getHeader());
+        return result;
+    }
 }
 

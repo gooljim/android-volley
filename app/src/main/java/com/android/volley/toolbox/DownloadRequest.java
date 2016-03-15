@@ -54,6 +54,8 @@ public class DownloadRequest extends Request<File> {
                 headers.put("RANGE", "bytes=" + fileLen + "-");
                 return headers;
             }
+        } else {
+            headers.putAll(RequestManager.getHeader());
         }
         return headers;
     }

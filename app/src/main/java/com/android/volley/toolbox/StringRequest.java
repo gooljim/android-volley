@@ -16,6 +16,7 @@
 
 package com.android.volley.toolbox;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.NetworkResponse;
 import com.android.volley.Request;
 import com.android.volley.Response;
@@ -23,23 +24,25 @@ import com.android.volley.Response.ErrorListener;
 import com.android.volley.Response.Listener;
 
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A canned request for retrieving the response body at a given URL as a String.
  */
 public class StringRequest extends Request<String> {
-    private Listener<String> mListener;
+    private final Listener<String> mListener;
 
     /**
      * Creates a new request with the given method.
      *
-     * @param method the request {@link Method} to use
-     * @param url URL to fetch the string at
-     * @param listener Listener to receive the String response
+     * @param method        the request {@link Method} to use
+     * @param url           URL to fetch the string at
+     * @param listener      Listener to receive the String response
      * @param errorListener Error listener, or null to ignore errors
      */
     public StringRequest(int method, String url, Listener<String> listener,
-            ErrorListener errorListener) {
+                         ErrorListener errorListener) {
         super(method, url, errorListener);
         mListener = listener;
     }
@@ -47,8 +50,8 @@ public class StringRequest extends Request<String> {
     /**
      * Creates a new GET request.
      *
-     * @param url URL to fetch the string at
-     * @param listener Listener to receive the String response
+     * @param url           URL to fetch the string at
+     * @param listener      Listener to receive the String response
      * @param errorListener Error listener, or null to ignore errors
      */
     public StringRequest(String url, Listener<String> listener, ErrorListener errorListener) {
@@ -56,17 +59,8 @@ public class StringRequest extends Request<String> {
     }
 
     @Override
-    protected void onFinish() {
-        super.onFinish();
-        mListener = null;
-    }
-
-    @Override
     protected void deliverResponse(String response) {
-        if (mListener != null) {
-            mListener.onResponse(response);
-        }
-        mListener=null;
+        mListener.onResponse(response);
     }
 
     @Override
@@ -78,6 +72,13 @@ public class StringRequest extends Request<String> {
             parsed = new String(response.data);
         }
         return Response.success(parsed, HttpHeaderParser.parseCacheHeaders(response));
+    }
+
+    @Override
+    public Map<String, String> getHeaders() throws AuthFailureError {
+        Map<String, String> result = new HashMap<String, String>();
+        result.putAll(RequestManager.getHeader());
+        return result;
     }
 
 }
