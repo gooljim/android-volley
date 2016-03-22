@@ -1,6 +1,5 @@
 package com.android.volley.toolbox;
 
-import com.android.volley.AuthFailureError;
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.NetworkResponse;
 import com.android.volley.ParseError;
@@ -160,12 +159,6 @@ public class VolleyMultiPartJsonRequest extends JsonRequest<JSONObject> {
         } catch (JSONException je) {
             return Response.error(new ParseError(je));
         }
-    }
-    @Override
-    public Map<String, String> getHeaders() throws AuthFailureError {
-        Map<String, String> result = new HashMap<String, String>();
-        result.putAll(RequestManager.getHeader());
-        return result;
     }
 }
 

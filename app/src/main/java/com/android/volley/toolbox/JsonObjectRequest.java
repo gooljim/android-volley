@@ -16,7 +16,6 @@
 
 package com.android.volley.toolbox;
 
-import com.android.volley.AuthFailureError;
 import com.android.volley.NetworkResponse;
 import com.android.volley.ParseError;
 import com.android.volley.Response;
@@ -27,8 +26,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * A request for retrieving a {@link JSONObject} response body at a given URL, allowing for an
@@ -75,12 +72,6 @@ public class JsonObjectRequest extends JsonRequest<JSONObject> {
         } catch (JSONException je) {
             return Response.error(new ParseError(je));
         }
-    }
-    @Override
-    public Map<String, String> getHeaders() throws AuthFailureError {
-        Map<String, String> result = new HashMap<String, String>();
-        result.putAll(RequestManager.getHeader());
-        return result;
     }
 
 

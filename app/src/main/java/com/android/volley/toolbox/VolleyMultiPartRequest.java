@@ -1,6 +1,5 @@
 package com.android.volley.toolbox;
 
-import com.android.volley.AuthFailureError;
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.NetworkResponse;
 import com.android.volley.Request;
@@ -137,11 +136,5 @@ public class VolleyMultiPartRequest extends Request<String> {
         mListener.onResponse(response);
     }
 
-    @Override
-    public Map<String, String> getHeaders() throws AuthFailureError {
-        Map<String, String> result = new HashMap<String, String>();
-        result.putAll(RequestManager.getHeader());
-        return result;
-    }
 }
 
